@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="tr">
+<meta charset="utf-8">
+<title>Enerji Erken Uyarı</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body {
+    max-width: 760px;
+    margin: 48px auto;
+    padding: 0 20px;
+    background: #f4f7fb;
+    color: #17283c;
+    font: 16px/1.5 system-ui, sans-serif;
+  }
+
+  h1 { margin-bottom: 4px; }
+  h1 + p { margin-top: 0; color: #43546a; }
+
+  form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid #d4dfeb;
+    border-radius: 12px;
+    background: white;
+  }
+
+  input, button {
+    padding: 9px 12px;
+    border: 1px solid #63788d;
+    border-radius: 6px;
+    font: inherit;
+  }
+
+  button {
+    background: #174c70;
+    color: white;
+    cursor: pointer;
+  }
+
+  #sonuc:not(:empty) {
+    padding: 16px 20px;
+    border-left: 4px solid #174c70;
+    border-radius: 6px;
+    background: white;
+    font-weight: 600;
+  }
+</style>
+<h1>Enerji Erken Uyarı</h1>
+<p>2018 tarihsel veri demosu · İnceleme eşiği: %20</p>
+
+<form id="sorgu">
+  <label for="gun">İncelenecek gün:</label>
+  <input id="gun" type="date" min="2018-01-01" max="2018-12-31"
+         value="2018-01-26" required>
+  <button>Günü incele</button>
+</form>
+
+<p id="sonuc" aria-live="polite"></p>
+
+<script>
+  const form = document.querySelector("#sorgu");
+  const sonuc = document.querySelector("#sonuc");
+  const sayi = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 2 });
+
+  form.addEventListener("submit", async (olay) => {
+    olay.preventDefault();
+    sonuc.textContent = "Ölçümler yükleniyor…";
+
+    try {
+      const gun = document.querySelector("#gun").value;
+      const yanit = await fetch(`/api/gunluk/${gun}`);
+      const veri = await yanit.json();
+
+      if (!yanit.ok) {
+        sonuc.textContent = veri.hata;
+      } else if (veri.veri_durumu !== "Tam") {
+        sonuc.textContent = veri.veri_durumu;
+      } else if (veri.referans_kwh == null) {
+        sonuc.textContent = `${veri.karar} · Tüketim: ${sayi.format(veri.toplam_kwh)} kWh`;
+      } else {
+        sonuc.textContent =
+          `${veri.karar} · Tüketim: ${sayi.format(veri.toplam_kwh)} kWh · ` +
+          `Referans: ${sayi.format(veri.referans_kwh)} kWh · ` +
+          `Fark: %${sayi.format(veri.fark_yuzde)}`;
+      }
+    } catch {
+      sonuc.textContent = "API’ye ulaşılamadı. Sunucunun çalıştığını kontrol et.";
+    }
+  });
+</script>
+</html>
