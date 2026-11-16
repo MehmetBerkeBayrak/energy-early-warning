@@ -1,118 +1,46 @@
-\# Energy Consumption Early Warning System
+# Energy Consumption Early Warning System
 
+A local web app that simulates a steel plant energy team's morning review.
+This independent portfolio prototype uses public DAEWOO Steel data from 2018.
 
+## How it works
 
-A local web application for reviewing daily electricity consumption at a
+Select a date in the browser. The Python API reads PostgreSQL and checks for
+96 expected quarter-hour readings, with no duplicate timestamps or missing values.
 
-steel plant. This independent portfolio prototype uses public DAEWOO Steel
+The baseline averages eligible days with the same day of the week in the previous
+four weeks. It excludes the selected date and all future dates. A decision requires
+at least three eligible reference days and a nonzero baseline.
 
-data from 2018 to simulate a plant energy team's morning review.
+The app flags consumption at least **20% above baseline**. A flag prompts
+investigation; it does not prove a fault. Low consumption does not trigger an alert.
 
-
-
-\## What the application does
-
-
-
-Select a date in the browser. The Python API queries PostgreSQL, checks
-
-that all 96 expected 15-minute readings are present without duplicates or
-
-blank values, and calculates daily consumption.
-
-
-
-The baseline is the average of eligible days that fall on the same day of
-
-the week over the prior four weeks. The selected date and future dates
-
-are excluded. At least three eligible reference days and a nonzero
-
-baseline are required.
-
-
-
-The application flags increases of \*\*20% or more\*\* for review. Lower
-
-consumption does not trigger an alert. A flag is a prompt to investigate,
-
-not evidence of an equipment fault.
-
-
-
-\## Verified examples
-
-
+## Verified examples
 
 | Date | Result |
-
 | --- | --- |
+| 2018-01-26 | Flagged: 7,069.29 kWh vs. 5,688.23 kWh, up 24.28%. |
+| 2018-01-19 | Consumption available; insufficient baseline data. |
+| 2018-02-16 | No alert; consumption was 94.32% below baseline. |
 
-| 2018-01-26 | Flagged: 7,069.29 kWh vs. 5,688.23 kWh, up 24.28% |
+The 2018 backtest flagged **81 of 344 evaluable days (23.5%)**.
+Another 263 days were below the threshold; 21 had no decision.
 
-| 2018-01-19 | Consumption available, but insufficient baseline data |
+## Run locally
 
-| 2018-02-16 | Below the alert threshold: consumption was 94.32% below baseline |
+1. Prepare the `daewoo_energy` database on `localhost:5432`. The app reads
+   `olcum_zamani` and `tuketim_kwh` from `public.enerji_analiz`.
+2. Create a virtual environment: `python -m venv .venv`
+3. Install dependencies: `.\.venv\Scripts\python.exe -m pip install -r requirements.txt`
+4. Start the app: `.\.venv\Scripts\python.exe enerji_api.py`
+5. Enter your PostgreSQL credentials in the terminal and open
+   [the local app](http://127.0.0.1:8000/). The JSON endpoint is `/api/gunluk/YYYY-MM-DD`.
 
-
-
-The 2018 backtest flagged \*\*81 of 344 evaluable days (23.5%)\*\*.
-
-Another 263 days were below the threshold and 21 had no decision.
-
-The Power BI report summarizes these historical results.
-
-
-
-\## Run locally
-
-
-
-The application expects PostgreSQL on `localhost:5432`, with a database
-
-named `daewoo\_energy` and a prepared `public.enerji\_analiz` table containing
-
-`olcum\_zamani` and `tuketim\_kwh`.
-
-
-
-From PowerShell in the project folder:
-
-
-
-```powershell
-
-python -m venv .venv
-
-.\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt
-
-.\\.venv\\Scripts\\python.exe enerji\_api.py
-
-```
-
-
-
-Enter your PostgreSQL credentials in the terminal, then open
-
-\[the local application](http://127.0.0.1:8000/). The JSON endpoint is
-
-`/api/gunluk/YYYY-MM-DD`.
-
-
-
-To regenerate `gunluk\_uyarilar.csv`, run `gecmis\_test.py` with the same
-
-Python environment. Open `Enerji\_Erken\_Uyari.pbix` in Power BI Desktop. To
-
-refresh it on another computer, update the CSV source path in Power Query.
-
-
+Run `gecmis_test.py` to regenerate `gunluk_uyarilar.csv`.
+Open `Enerji_Erken_Uyari.pbix` to explore the results in Power BI Desktop.
+To refresh on another computer, update the CSV source path in Power Query.
 
 This prototype runs locally on historical data and does not send live alerts.
 
-
-
-Data source: \[UCI Steel Industry Energy Consumption](https://doi.org/10.24432/C52G8C),
-
+Data source: [UCI Steel Industry Energy Consumption](https://doi.org/10.24432/C52G8C),
 CC BY 4.0.
-
